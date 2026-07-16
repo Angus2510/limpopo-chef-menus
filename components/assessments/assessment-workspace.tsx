@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Search, Filter, ClipboardList } from "lucide-react"
-import { toast } from "sonner"
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Search, Filter, ClipboardList } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
+} from "@/components/ui/accordion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,10 +21,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Command,
   CommandDialog,
@@ -34,7 +34,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command"
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -42,16 +42,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -59,105 +59,121 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ASSESSMENT_CATEGORY_LABELS,
   ASSESSMENT_TEMPLATES,
-} from "@/lib/assessment-catalog"
-import { AssessmentTemplate, IntakeGroupOption, StudentOption } from "@/types/assessment"
+} from "@/lib/assessment-catalog";
+import {
+  AssessmentTemplate,
+  IntakeGroupOption,
+  StudentOption,
+} from "@/types/assessment";
 
 type GroupedAssessments = {
-  category: string
-  label: string
-  items: AssessmentTemplate[]
-}
+  category: string;
+  label: string;
+  items: AssessmentTemplate[];
+};
 
 export function AssessmentWorkspace() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const [intakeGroups, setIntakeGroups] = useState<IntakeGroupOption[]>([])
-  const [selectedIntakeGroupId, setSelectedIntakeGroupId] = useState("")
-  const [students, setStudents] = useState<StudentOption[]>([])
-  const [selectedStudentId, setSelectedStudentId] = useState("")
-  const [selectedAssessmentCode, setSelectedAssessmentCode] = useState("")
-  const [assessmentSearchOpen, setAssessmentSearchOpen] = useState(false)
+  const [intakeGroups, setIntakeGroups] = useState<IntakeGroupOption[]>([]);
+  const [selectedIntakeGroupId, setSelectedIntakeGroupId] = useState("");
+  const [students, setStudents] = useState<StudentOption[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [selectedAssessmentCode, setSelectedAssessmentCode] = useState("");
+  const [assessmentSearchOpen, setAssessmentSearchOpen] = useState(false);
 
-  const [loadingGroups, setLoadingGroups] = useState(true)
-  const [loadingStudents, setLoadingStudents] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const groupedAssessments = useMemo<GroupedAssessments[]>(() => {
-    return Object.entries(ASSESSMENT_CATEGORY_LABELS).map(([category, label]) => ({
-      category,
-      label,
-      items: ASSESSMENT_TEMPLATES.filter((assessment) => assessment.category === category),
-    }))
-  }, [])
+    return Object.entries(ASSESSMENT_CATEGORY_LABELS).map(
+      ([category, label]) => ({
+        category,
+        label,
+        items: ASSESSMENT_TEMPLATES.filter(
+          (assessment) => assessment.category === category,
+        ),
+      }),
+    );
+  }, []);
 
   const selectedAssessment = useMemo(
-    () => ASSESSMENT_TEMPLATES.find((assessment) => assessment.code === selectedAssessmentCode),
+    () =>
+      ASSESSMENT_TEMPLATES.find(
+        (assessment) => assessment.code === selectedAssessmentCode,
+      ),
     [selectedAssessmentCode],
-  )
+  );
 
   const selectedStudent = useMemo(
     () => students.find((student) => student.id === selectedStudentId),
     [students, selectedStudentId],
-  )
+  );
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     async function loadIntakeGroups() {
-      setLoadingGroups(true)
-      setErrorMessage("")
+      setLoadingGroups(true);
+      setErrorMessage("");
 
       try {
-        const response = await fetch("/api/intake-groups", { cache: "no-store" })
+        const response = await fetch("/api/intake-groups", {
+          cache: "no-store",
+        });
         const payload = (await response.json()) as {
-          intakeGroups?: IntakeGroupOption[]
-          error?: string
-        }
+          intakeGroups?: IntakeGroupOption[];
+          error?: string;
+        };
 
         if (!response.ok) {
-          throw new Error(payload.error || "Unable to load intake groups")
+          throw new Error(payload.error || "Unable to load intake groups");
         }
 
         if (!cancelled) {
-          setIntakeGroups(payload.intakeGroups ?? [])
+          setIntakeGroups(payload.intakeGroups ?? []);
         }
       } catch (error) {
         if (!cancelled) {
-          const message = error instanceof Error ? error.message : "Unable to load intake groups"
-          setErrorMessage(message)
-          toast.error(message)
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Unable to load intake groups";
+          setErrorMessage(message);
+          toast.error(message);
         }
       } finally {
         if (!cancelled) {
-          setLoadingGroups(false)
+          setLoadingGroups(false);
         }
       }
     }
 
-    loadIntakeGroups()
+    loadIntakeGroups();
 
     return () => {
-      cancelled = true
-    }
-  }, [])
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     async function loadStudents() {
       if (!selectedIntakeGroupId) {
-        setStudents([])
-        setSelectedStudentId("")
-        return
+        setStudents([]);
+        setSelectedStudentId("");
+        return;
       }
 
-      setLoadingStudents(true)
-      setErrorMessage("")
+      setLoadingStudents(true);
+      setErrorMessage("");
 
       try {
         const response = await fetch(
@@ -165,57 +181,58 @@ export function AssessmentWorkspace() {
           {
             cache: "no-store",
           },
-        )
+        );
         const payload = (await response.json()) as {
-          students?: StudentOption[]
-          error?: string
-        }
+          students?: StudentOption[];
+          error?: string;
+        };
 
         if (!response.ok) {
-          throw new Error(payload.error || "Unable to load students")
+          throw new Error(payload.error || "Unable to load students");
         }
 
         if (!cancelled) {
-          setStudents(payload.students ?? [])
-          setSelectedStudentId("")
+          setStudents(payload.students ?? []);
+          setSelectedStudentId("");
         }
       } catch (error) {
         if (!cancelled) {
-          const message = error instanceof Error ? error.message : "Unable to load students"
-          setErrorMessage(message)
-          toast.error(message)
+          const message =
+            error instanceof Error ? error.message : "Unable to load students";
+          setErrorMessage(message);
+          toast.error(message);
         }
       } finally {
         if (!cancelled) {
-          setLoadingStudents(false)
+          setLoadingStudents(false);
         }
       }
     }
 
-    loadStudents()
+    loadStudents();
 
     return () => {
-      cancelled = true
-    }
-  }, [selectedIntakeGroupId])
+      cancelled = true;
+    };
+  }, [selectedIntakeGroupId]);
 
   function openAssessment() {
     if (!selectedStudentId || !selectedAssessmentCode) {
-      toast.error("Select a student and menu before continuing")
-      return
+      toast.error("Select a student and menu before continuing");
+      return;
     }
 
     router.push(
       `/dashboard/assessments/${selectedAssessmentCode}?studentId=${selectedStudentId}&intakeGroupId=${selectedIntakeGroupId}`,
-    )
+    );
   }
 
   function resetSelections() {
-    setSelectedIntakeGroupId("")
-    setStudents([])
-    setSelectedStudentId("")
-    setSelectedAssessmentCode("")
-    toast.info("Selection reset")
+    setSelectedIntakeGroupId("");
+    setStudents([]);
+    setSelectedStudentId("");
+    setSelectedAssessmentCode("");
+    toast.info("Selection reset");
   }
 
   return (
@@ -236,8 +253,9 @@ export function AssessmentWorkspace() {
               <DialogHeader>
                 <DialogTitle>Assessment workflow</DialogTitle>
                 <DialogDescription>
-                  This framework supports selecting a student and menu, autosaving progress,
-                  and enforcing read-only mode after completion.
+                  This framework supports selecting a student and menu,
+                  autosaving progress, and enforcing read-only mode after
+                  completion.
                 </DialogDescription>
               </DialogHeader>
             </DialogContent>
@@ -248,10 +266,14 @@ export function AssessmentWorkspace() {
             <p className="text-sm font-medium">Intake Group</p>
             <Select
               value={selectedIntakeGroupId}
-              onValueChange={(value) => setSelectedIntakeGroupId(value)}
+              onValueChange={(value) => setSelectedIntakeGroupId(value ?? "")}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={loadingGroups ? "Loading groups..." : "Select group"} />
+                <SelectValue
+                  placeholder={
+                    loadingGroups ? "Loading groups..." : "Select group"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {intakeGroups.map((group) => (
@@ -265,7 +287,10 @@ export function AssessmentWorkspace() {
 
           <div className="space-y-2">
             <p className="text-sm font-medium">Selected Student</p>
-            <Select value={selectedStudentId} onValueChange={(value) => setSelectedStudentId(value)}>
+            <Select
+              value={selectedStudentId}
+              onValueChange={(value) => setSelectedStudentId(value ?? "")}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue
                   placeholder={
@@ -306,23 +331,34 @@ export function AssessmentWorkspace() {
 
           <div className="md:col-span-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{intakeGroups.length} Intake Groups</Badge>
+              <Badge variant="secondary">
+                {intakeGroups.length} Intake Groups
+              </Badge>
               <Badge variant="secondary">{students.length} Students</Badge>
-              <Badge variant="secondary">{ASSESSMENT_TEMPLATES.length} Menus</Badge>
+              <Badge variant="secondary">
+                {ASSESSMENT_TEMPLATES.length} Menus
+              </Badge>
               <AlertDialog>
-                <AlertDialogTrigger render={<Button variant="ghost" size="sm" />}>
+                <AlertDialogTrigger
+                  render={<Button variant="ghost" size="sm" />}
+                >
                   Reset selection
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Reset current selection?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Reset current selection?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This clears selected intake group, student, and menu from this screen.
+                      This clears selected intake group, student, and menu from
+                      this screen.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={resetSelections}>Reset</AlertDialogAction>
+                    <AlertDialogAction onClick={resetSelections}>
+                      Reset
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -358,7 +394,9 @@ export function AssessmentWorkspace() {
                 </div>
               ) : null}
 
-              {selectedIntakeGroupId && !loadingStudents && students.length === 0 ? (
+              {selectedIntakeGroupId &&
+              !loadingStudents &&
+              students.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
                   No students found for the selected intake group.
                 </div>
@@ -372,15 +410,20 @@ export function AssessmentWorkspace() {
                         <TableHead>Admission</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="w-24 text-right">Action</TableHead>
+                        <TableHead className="w-24 text-right">
+                          Action
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {students.map((student) => {
-                        const selected = selectedStudentId === student.id
+                        const selected = selectedStudentId === student.id;
 
                         return (
-                          <TableRow key={student.id} data-state={selected ? "selected" : undefined}>
+                          <TableRow
+                            key={student.id}
+                            data-state={selected ? "selected" : undefined}
+                          >
                             <TableCell>{student.admissionNumber}</TableCell>
                             <TableCell>{student.fullName}</TableCell>
                             <TableCell>
@@ -398,7 +441,7 @@ export function AssessmentWorkspace() {
                               </Button>
                             </TableCell>
                           </TableRow>
-                        )
+                        );
                       })}
                     </TableBody>
                   </Table>
@@ -417,7 +460,7 @@ export function AssessmentWorkspace() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Accordion type="multiple" className="w-full">
+              <Accordion className="w-full">
                 {groupedAssessments.map((group) => (
                   <AccordionItem key={group.category} value={group.category}>
                     <AccordionTrigger>
@@ -429,18 +472,21 @@ export function AssessmentWorkspace() {
                     <AccordionContent>
                       <div className="grid gap-2 sm:grid-cols-2">
                         {group.items.map((assessment) => {
-                          const active = assessment.code === selectedAssessmentCode
+                          const active =
+                            assessment.code === selectedAssessmentCode;
 
                           return (
                             <Button
                               key={assessment.id}
                               variant={active ? "default" : "outline"}
                               className="justify-start"
-                              onClick={() => setSelectedAssessmentCode(assessment.code)}
+                              onClick={() =>
+                                setSelectedAssessmentCode(assessment.code)
+                              }
                             >
                               {assessment.title}
                             </Button>
-                          )
+                          );
                         })}
                       </div>
                     </AccordionContent>
@@ -483,15 +529,17 @@ export function AssessmentWorkspace() {
                       key={assessment.id}
                       value={`${assessment.code} ${assessment.title}`}
                       onSelect={() => {
-                        setSelectedAssessmentCode(assessment.code)
-                        setAssessmentSearchOpen(false)
+                        setSelectedAssessmentCode(assessment.code);
+                        setAssessmentSearchOpen(false);
                       }}
                     >
                       {assessment.title}
                     </CommandItem>
                   ))}
                 </CommandGroup>
-                {index < groupedAssessments.length - 1 ? <CommandSeparator /> : null}
+                {index < groupedAssessments.length - 1 ? (
+                  <CommandSeparator />
+                ) : null}
               </div>
             ))}
           </CommandList>
@@ -500,9 +548,13 @@ export function AssessmentWorkspace() {
 
       {selectedStudent ? (
         <p className="text-sm text-muted-foreground">
-          Ready to assess <span className="font-medium text-foreground">{selectedStudent.fullName}</span>.
+          Ready to assess{" "}
+          <span className="font-medium text-foreground">
+            {selectedStudent.fullName}
+          </span>
+          .
         </p>
       ) : null}
     </div>
-  )
+  );
 }

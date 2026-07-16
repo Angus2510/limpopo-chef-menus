@@ -1,11 +1,11 @@
-import { AssessmentCategory, AssessmentTemplate } from "@/types/assessment"
+import { AssessmentCategory, AssessmentTemplate } from "@/types/assessment";
 
 type MenuDefinition = {
-  category: AssessmentCategory
-  prefix: string
-  count: number
-  finalLabel?: Record<number, string>
-}
+  category: AssessmentCategory;
+  prefix: string;
+  count: number;
+  finalLabel?: Record<number, string>;
+};
 
 const definitions: MenuDefinition[] = [
   {
@@ -42,20 +42,24 @@ const definitions: MenuDefinition[] = [
       17: "Final Summative Practical Exam",
     },
   },
-]
+];
 
 function buildTemplateCode(prefix: string, index: number): string {
-  const segment = prefix ? `${prefix.toLowerCase()}${index}` : String(index)
-  return `menu-${segment}`
+  const segment = prefix ? `${prefix.toLowerCase()}${index}` : String(index);
+  return `menu-${segment}`;
 }
 
-function buildTemplateTitle(prefix: string, index: number, label?: string): string {
-  const menuLabel = prefix ? `Menu ${prefix}${index}` : `Menu ${index}`
-  return label ? `${menuLabel} ${label}` : menuLabel
+function buildTemplateTitle(
+  prefix: string,
+  index: number,
+  label?: string,
+): string {
+  const menuLabel = prefix ? `Menu ${prefix}${index}` : `Menu ${index}`;
+  return label ? `${menuLabel} ${label}` : menuLabel;
 }
 
 function buildTemplates(): AssessmentTemplate[] {
-  const templates: AssessmentTemplate[] = []
+  const templates: AssessmentTemplate[] = [];
 
   for (const definition of definitions) {
     for (let index = 1; index <= definition.count; index += 1) {
@@ -68,14 +72,14 @@ function buildTemplates(): AssessmentTemplate[] {
           definition.finalLabel?.[index],
         ),
         category: definition.category,
-      })
+      });
     }
   }
 
-  return templates
+  return templates;
 }
 
-export const ASSESSMENT_TEMPLATES: AssessmentTemplate[] = buildTemplates()
+export const ASSESSMENT_TEMPLATES: AssessmentTemplate[] = buildTemplates();
 
 export const ASSESSMENT_CATEGORY_LABELS: Record<AssessmentCategory, string> = {
   menu: "Menu",
@@ -83,4 +87,4 @@ export const ASSESSMENT_CATEGORY_LABELS: Record<AssessmentCategory, string> = {
   "menu-b": "Menu B",
   "menu-c": "Menu C",
   "menu-p": "Menu P",
-}
+};

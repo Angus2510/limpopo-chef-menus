@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AssessmentsLoading() {
   return (
@@ -13,5 +13,5 @@ export default function AssessmentsLoading() {
         <Skeleton className="h-64 w-full" />
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -1,32 +1,35 @@
-import { notFound } from "next/navigation"
+import { notFound } from "next/navigation";
 
-import { AssessmentPage } from "@/components/assessments/assessment-page"
-import { ASSESSMENT_TEMPLATES } from "@/lib/assessment-catalog"
-import prisma from "@/lib/db"
+import { AssessmentPage } from "@/components/assessments/assessment-page";
+import { ASSESSMENT_TEMPLATES } from "@/lib/assessment-catalog";
+import prisma from "@/lib/db";
 
 type AssessmentRouteProps = {
-  params: Promise<{ assessmentCode: string }>
-  searchParams: Promise<{ studentId?: string }>
-}
+  params: Promise<{ assessmentCode: string }>;
+  searchParams: Promise<{ studentId?: string }>;
+};
 
-const objectIdRegex = /^[0-9a-fA-F]{24}$/
+const objectIdRegex = /^[0-9a-fA-F]{24}$/;
 
 export default async function AssessmentRoute({
   params,
   searchParams,
 }: AssessmentRouteProps) {
-  const [{ assessmentCode }, { studentId }] = await Promise.all([params, searchParams])
+  const [{ assessmentCode }, { studentId }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
 
   const template = ASSESSMENT_TEMPLATES.find(
     (item) => item.code === assessmentCode.toLowerCase(),
-  )
+  );
 
   if (!template) {
-    notFound()
+    notFound();
   }
 
   if (!studentId || !objectIdRegex.test(studentId)) {
-    notFound()
+    notFound();
   }
 
   const student = await prisma.students.findUnique({
@@ -41,10 +44,10 @@ export default async function AssessmentRoute({
         },
       },
     },
-  })
+  });
 
   if (!student) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -53,8 +56,9 @@ export default async function AssessmentRoute({
       student={{
         id: student.id,
         admissionNumber: student.admissionNumber,
-        fullName: `${student.profile.firstName} ${student.profile.lastName}`.trim(),
+        fullName:
+          `${student.profile.firstName} ${student.profile.lastName}`.trim(),
       }}
     />
-  )
+  );
 }

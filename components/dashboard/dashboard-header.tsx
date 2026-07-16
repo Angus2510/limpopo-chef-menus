@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Menu, LogOut } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Menu, LogOut } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,38 +16,38 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
-import { SidebarNav } from "@/components/dashboard/sidebar-nav"
+} from "@/components/ui/sheet";
+import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 
 export function DashboardHeader() {
-  const router = useRouter()
-  const [busy, setBusy] = useState(false)
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
 
   async function handleLogout() {
-    setBusy(true)
+    setBusy(true);
     try {
       const response = await fetch("/api/auth/logout", {
         method: "POST",
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Logout failed")
+        throw new Error("Logout failed");
       }
 
-      toast.success("Signed out")
-      router.replace("/login")
-      router.refresh()
+      toast.success("Signed out");
+      router.replace("/login");
+      router.refresh();
     } catch {
-      toast.error("Unable to log out")
+      toast.error("Unable to log out");
     } finally {
-      setBusy(false)
+      setBusy(false);
     }
   }
 
@@ -94,5 +94,5 @@ export function DashboardHeader() {
         </AlertDialog>
       </div>
     </header>
-  )
+  );
 }

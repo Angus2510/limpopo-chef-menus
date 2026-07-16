@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { toast } from "sonner"
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -14,10 +14,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -25,40 +25,43 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AssessmentTemplate, StudentAssessmentRecord } from "@/types/assessment"
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AssessmentTemplate,
+  StudentAssessmentRecord,
+} from "@/types/assessment";
 
 type AssessmentPageProps = {
-  template: AssessmentTemplate
+  template: AssessmentTemplate;
   student: {
-    id: string
-    fullName: string
-    admissionNumber: string
-  }
-}
+    id: string;
+    fullName: string;
+    admissionNumber: string;
+  };
+};
 
 export function AssessmentPage({ template, student }: AssessmentPageProps) {
-  const [record, setRecord] = useState<StudentAssessmentRecord | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-  const [updating, setUpdating] = useState(false)
+  const [record, setRecord] = useState<StudentAssessmentRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updating, setUpdating] = useState(false);
 
   const readOnly = useMemo(() => {
     if (!record) {
-      return false
+      return false;
     }
 
-    return record.completed || record.locked
-  }, [record])
+    return record.completed || record.locked;
+  }, [record]);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     async function ensureDraft() {
-      setLoading(true)
-      setError("")
+      setLoading(true);
+      setError("");
 
       try {
         const response = await fetch("/api/student-assessments", {
@@ -70,45 +73,45 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
             studentId: student.id,
             assessmentCode: template.code,
           }),
-        })
+        });
 
         const payload = (await response.json()) as {
-          assessment?: StudentAssessmentRecord
-          error?: string
-        }
+          assessment?: StudentAssessmentRecord;
+          error?: string;
+        };
 
         if (!response.ok || !payload.assessment) {
-          throw new Error(payload.error || "Unable to autosave assessment")
+          throw new Error(payload.error || "Unable to autosave assessment");
         }
 
         if (!cancelled) {
-          setRecord(payload.assessment)
+          setRecord(payload.assessment);
         }
       } catch (requestError) {
         if (!cancelled) {
           const message =
             requestError instanceof Error
               ? requestError.message
-              : "Unable to autosave assessment"
-          setError(message)
-          toast.error(message)
+              : "Unable to autosave assessment";
+          setError(message);
+          toast.error(message);
         }
       } finally {
         if (!cancelled) {
-          setLoading(false)
+          setLoading(false);
         }
       }
     }
 
-    ensureDraft()
+    ensureDraft();
 
     return () => {
-      cancelled = true
-    }
-  }, [student.id, template.code])
+      cancelled = true;
+    };
+  }, [student.id, template.code]);
 
   async function markComplete() {
-    setUpdating(true)
+    setUpdating(true);
 
     try {
       const response = await fetch("/api/student-assessments", {
@@ -121,25 +124,27 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
           assessmentCode: template.code,
           completed: true,
         }),
-      })
+      });
 
       const payload = (await response.json()) as {
-        assessment?: StudentAssessmentRecord
-        error?: string
-      }
+        assessment?: StudentAssessmentRecord;
+        error?: string;
+      };
 
       if (!response.ok || !payload.assessment) {
-        throw new Error(payload.error || "Unable to complete assessment")
+        throw new Error(payload.error || "Unable to complete assessment");
       }
 
-      setRecord(payload.assessment)
-      toast.success("Assessment marked complete and locked")
+      setRecord(payload.assessment);
+      toast.success("Assessment marked complete and locked");
     } catch (requestError) {
       const message =
-        requestError instanceof Error ? requestError.message : "Unable to complete assessment"
-      toast.error(message)
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to complete assessment";
+      toast.error(message);
     } finally {
-      setUpdating(false)
+      setUpdating(false);
     }
   }
 
@@ -162,9 +167,12 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/assessments">Back to Selection</Link>
-            </Button>
+            <Link
+              href="/dashboard/assessments"
+              className={buttonVariants({ variant: "outline" })}
+            >
+              Back to Selection
+            </Link>
             <Dialog>
               <DialogTrigger render={<Button variant="secondary" />}>
                 Assessment Info
@@ -173,8 +181,9 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
                 <DialogHeader>
                   <DialogTitle>Assessment framework only</DialogTitle>
                   <DialogDescription>
-                    Criteria and scoring form fields are intentionally not created yet.
-                    This page currently handles routing, state, autosave, and lock behavior.
+                    Criteria and scoring form fields are intentionally not
+                    created yet. This page currently handles routing, state,
+                    autosave, and lock behavior.
                   </DialogDescription>
                 </DialogHeader>
               </DialogContent>
@@ -195,7 +204,10 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={markComplete} disabled={updating}>
+                    <AlertDialogAction
+                      onClick={markComplete}
+                      disabled={updating}
+                    >
                       {updating ? "Saving..." : "Confirm"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -207,7 +219,9 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
           <Separator />
 
           {loading ? (
-            <p className="text-sm text-muted-foreground">Preparing assessment draft...</p>
+            <p className="text-sm text-muted-foreground">
+              Preparing assessment draft...
+            </p>
           ) : null}
 
           {error ? (
@@ -226,11 +240,14 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
               <TabsContent value="overview" className="pt-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Empty assessment page</CardTitle>
+                    <CardTitle className="text-base">
+                      Empty assessment page
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
-                      Assessment form fields and criteria are not implemented yet.
+                      Assessment form fields and criteria are not implemented
+                      yet.
                     </p>
                   </CardContent>
                 </Card>
@@ -238,11 +255,14 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
               <TabsContent value="sections" className="pt-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Sections placeholder</CardTitle>
+                    <CardTitle className="text-base">
+                      Sections placeholder
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground">
-                      Section and criterion rendering will be added in the next step.
+                      Section and criterion rendering will be added in the next
+                      step.
                     </p>
                   </CardContent>
                 </Card>
@@ -250,13 +270,18 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
               <TabsContent value="status" className="pt-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Assessment status</CardTitle>
+                    <CardTitle className="text-base">
+                      Assessment status
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
                     <p>Completed: {record?.completed ? "Yes" : "No"}</p>
                     <p>Locked: {record?.locked ? "Yes" : "No"}</p>
                     <p>
-                      Last saved: {record ? new Date(record.updatedAt).toLocaleString() : "-"}
+                      Last saved:{" "}
+                      {record
+                        ? new Date(record.updatedAt).toLocaleString()
+                        : "-"}
                     </p>
                   </CardContent>
                 </Card>
@@ -266,5 +291,5 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

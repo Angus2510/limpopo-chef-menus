@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   {
@@ -15,10 +15,10 @@ const navItems = [
     description: "Select intake, student, and menu",
     badge: "Core",
   },
-]
+];
 
 export function SidebarNav() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <ScrollArea className="h-full">
@@ -32,7 +32,7 @@ export function SidebarNav() {
         <Separator />
         <nav className="space-y-2">
           {navItems.map((item) => {
-            const active = pathname.startsWith(item.href)
+            const active = pathname.startsWith(item.href);
 
             return (
               <Link
@@ -49,12 +49,14 @@ export function SidebarNav() {
                   <p className="font-medium">{item.label}</p>
                   <Badge variant="secondary">{item.badge}</Badge>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {item.description}
+                </p>
               </Link>
-            )
+            );
           })}
         </nav>
       </div>
     </ScrollArea>
-  )
+  );
 }

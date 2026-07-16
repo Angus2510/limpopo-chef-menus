@@ -1,19 +1,22 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
+import { useEffect } from "react";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type AssessmentsErrorProps = {
-  error: Error & { digest?: string }
-  reset: () => void
-}
+  error: Error & { digest?: string };
+  reset: () => void;
+};
 
-export default function AssessmentsError({ error, reset }: AssessmentsErrorProps) {
+export default function AssessmentsError({
+  error,
+  reset,
+}: AssessmentsErrorProps) {
   useEffect(() => {
-    console.error(error)
-  }, [error])
+    console.error(error);
+  }, [error]);
 
   return (
     <Card>
@@ -25,5 +28,5 @@ export default function AssessmentsError({ error, reset }: AssessmentsErrorProps
         <Button onClick={reset}>Try again</Button>
       </CardContent>
     </Card>
-  )
+  );
 }

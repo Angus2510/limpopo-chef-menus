@@ -1,9 +1,9 @@
-import { SidebarNav } from "@/components/dashboard/sidebar-nav"
-import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { SidebarNav } from "@/components/dashboard/sidebar-nav";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 
 type DashboardShellProps = {
-  children: React.ReactNode
-}
+  children: React.ReactNode;
+};
 
 export function DashboardShell({ children }: DashboardShellProps) {
   return (
@@ -16,5 +16,5 @@ export function DashboardShell({ children }: DashboardShellProps) {
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
-  )
+  );
 }
