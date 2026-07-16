@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const mapped = students.map((student) => ({
+    const mapped = students.map((student: (typeof students)[number]) => ({
       id: student.id,
       admissionNumber: student.admissionNumber,
       fullName:

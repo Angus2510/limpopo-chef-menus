@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as MarkRequestBody;
 
     const studentIds = Array.isArray(body.studentIds)
-      ? body.studentIds.map((id) => String(id).trim())
+      ? body.studentIds.map((id: string) => String(id).trim())
       : [];
     const outcomeId = String(body.outcomeId || "").trim();
     const testScore = toNumber(body.testScore);
@@ -187,8 +187,12 @@ export async function POST(req: NextRequest) {
       select: { id: true },
     });
 
-    const activeIds = new Set(existingStudents.map((student) => student.id));
-    const invalidStudentIds = studentIds.filter((id) => !activeIds.has(id));
+    const activeIds = new Set(
+      existingStudents.map((student: { id: string }) => student.id),
+    );
+    const invalidStudentIds = studentIds.filter(
+      (id: string) => !activeIds.has(id),
+    );
 
     if (invalidStudentIds.length) {
       return NextResponse.json(

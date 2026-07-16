@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
     ([category, label]) => ({
       category,
       label,
-      items: ASSESSMENT_TEMPLATES.filter((item) => item.category === category),
+      items: ASSESSMENT_TEMPLATES.filter(
+        (item: (typeof ASSESSMENT_TEMPLATES)[number]) =>
+          item.category === category,
+      ),
     }),
   );
 
