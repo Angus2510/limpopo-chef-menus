@@ -19,6 +19,15 @@ type RoleRow = {
   permissions: RolePermissionEntry[];
 };
 
+type UserPermissionEntry = {
+  page: string;
+  permissions: {
+    view: boolean;
+    edit: boolean;
+    upload: boolean;
+  };
+};
+
 function normalizePermissionLabel(value: string): string {
   return value
     .toLowerCase()
@@ -181,12 +190,15 @@ export async function GET(req: NextRequest) {
     }
 
     if (staff.userPermissions?.length) {
-      const userPermissions = staff.userPermissions
+      const userPermissionEntries =
+        staff.userPermissions as UserPermissionEntry[];
+
+      const userPermissions = userPermissionEntries
         .filter(
-          (p) =>
+          (p: UserPermissionEntry) =>
             p.permissions.view || p.permissions.edit || p.permissions.upload,
         )
-        .flatMap((p) => {
+        .flatMap((p: UserPermissionEntry) => {
           const perms: Permission[] = [];
           const pageLower = p.page.toLowerCase();
 
