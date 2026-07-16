@@ -7,6 +7,26 @@ import type { NextAuthOptions, User as NextAuthUser } from "next-auth";
 import prisma from "@/lib/db";
 import type { UserType } from "@/types/auth";
 
+type AppUser = NextAuthUser & {
+  firstName: string;
+  lastName: string;
+  userType: UserType;
+  avatar?: string;
+  active?: boolean;
+  inactiveReason?: string;
+  linkedStudentId?: string;
+  studentName?: string;
+  viewingAs?: string;
+};
+
+function accountDisabledError(
+  message: string,
+): Error & { code: "ACCOUNT_DISABLED" } {
+  const error = new Error(message) as Error & { code: "ACCOUNT_DISABLED" };
+  error.code = "ACCOUNT_DISABLED";
+  return error;
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -20,92 +40,100 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email/Mobile and password are required");
         }
 
-        const userModels = [
-          { type: "Staff", prismaModel: prisma.staffs },
-          { type: "Student", prismaModel: prisma.students },
-          { type: "Guardian", prismaModel: prisma.guardians },
-        ] as const;
+        const staff = await prisma.staffs.findFirst({
+          where: {
+            OR: [
+              { email: credentials.identifier },
+              { username: credentials.identifier },
+            ],
+          },
+        });
 
-        for (const { type, prismaModel } of userModels) {
-          let userQueryResult: any = null;
+        if (
+          staff?.password &&
+          bcrypt.compareSync(credentials.password, staff.password)
+        ) {
+          const staffUser: AppUser = {
+            id: staff.id,
+            firstName: staff.profile?.firstName ?? "",
+            lastName: staff.profile?.lastName ?? "",
+            email: staff.email,
+            userType: "Staff",
+          };
 
-          if (type === "Guardian") {
-            userQueryResult = await prisma.guardians.findFirst({
-              where: {
-                OR: [
-                  { email: credentials.identifier },
-                  { mobileNumber: credentials.identifier },
-                ],
-              },
-            });
+          return staffUser;
+        }
 
-            if (
-              userQueryResult?.password &&
-              bcrypt.compareSync(credentials.password, userQueryResult.password)
-            ) {
-              const student = await prisma.students.findUnique({
-                where: { id: userQueryResult.studentId },
-              });
+        const student = await prisma.students.findFirst({
+          where: {
+            OR: [
+              { email: credentials.identifier },
+              { username: credentials.identifier },
+            ],
+          },
+        });
 
-              if (!student) {
-                throw new Error("No student linked to this guardian account");
-              }
-
-              if (!student.active) {
-                const error = new Error("Student account disabled");
-                (error as any).code = "ACCOUNT_DISABLED";
-                throw error;
-              }
-
-              return {
-                id: userQueryResult.id.toString(),
-                firstName: userQueryResult.firstName || "",
-                lastName: userQueryResult.lastName || "",
-                email: userQueryResult.email || "",
-                avatar: userQueryResult.avatarUrl || undefined,
-                userType: "Guardian" as UserType,
-                linkedStudentId: student.id.toString(),
-                studentName: `${student?.profile?.firstName || ""} ${student?.profile?.lastName || ""}`,
-                viewingAs: "Guardian",
-              } as NextAuthUser;
-            }
-          } else {
-            userQueryResult = await (prismaModel as any).findFirst({
-              where: {
-                OR: [
-                  { email: credentials.identifier },
-                  { username: credentials.identifier },
-                ],
-              },
-            });
-
-            if (
-              userQueryResult?.password &&
-              bcrypt.compareSync(credentials.password, userQueryResult.password)
-            ) {
-              if (type === "Student" && userQueryResult.active === false) {
-                const error = new Error(
-                  userQueryResult.inactiveReason ||
-                    "Your account has been disabled",
-                );
-                (error as any).code = "ACCOUNT_DISABLED";
-                throw error;
-              }
-
-              return {
-                id: userQueryResult.id.toString(),
-                firstName: userQueryResult.firstName || "",
-                lastName: userQueryResult.lastName || "",
-                email: userQueryResult.email || "",
-                avatar: userQueryResult.avatarUrl || undefined,
-                userType: type as UserType,
-                ...(type === "Student" && {
-                  active: userQueryResult.active as boolean,
-                  inactiveReason: userQueryResult.inactiveReason as string,
-                }),
-              } as NextAuthUser;
-            }
+        if (
+          student?.password &&
+          bcrypt.compareSync(credentials.password, student.password)
+        ) {
+          if (!student.active) {
+            throw accountDisabledError(
+              student.inactiveReason || "Your account has been disabled",
+            );
           }
+
+          const studentUser: AppUser = {
+            id: student.id,
+            firstName: student.profile?.firstName ?? "",
+            lastName: student.profile?.lastName ?? "",
+            email: student.email,
+            userType: "Student",
+            active: student.active,
+            inactiveReason: student.inactiveReason || undefined,
+          };
+
+          return studentUser;
+        }
+
+        const guardian = await prisma.guardians.findFirst({
+          where: {
+            OR: [
+              { email: credentials.identifier },
+              { mobileNumber: credentials.identifier },
+            ],
+          },
+        });
+
+        if (
+          guardian?.password &&
+          bcrypt.compareSync(credentials.password, guardian.password)
+        ) {
+          const linkedStudent = await prisma.students.findUnique({
+            where: { id: guardian.studentId },
+          });
+
+          if (!linkedStudent) {
+            throw new Error("No student linked to this guardian account");
+          }
+
+          if (!linkedStudent.active) {
+            throw accountDisabledError("Student account disabled");
+          }
+
+          const guardianUser: AppUser = {
+            id: guardian.id,
+            firstName: guardian.firstName || "",
+            lastName: guardian.lastName || "",
+            email: guardian.email || "",
+            userType: "Guardian",
+            linkedStudentId: linkedStudent.id,
+            studentName:
+              `${linkedStudent.profile?.firstName || ""} ${linkedStudent.profile?.lastName || ""}`.trim(),
+            viewingAs: "Guardian",
+          };
+
+          return guardianUser;
         }
 
         throw new Error("Invalid student number or password");
@@ -120,7 +148,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const typedUser = user as any;
+        const typedUser = user as AppUser;
         token.userId = typedUser.id;
         token.userType = typedUser.userType;
         token.firstName = typedUser.firstName;

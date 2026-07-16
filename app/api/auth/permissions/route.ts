@@ -95,11 +95,11 @@ export async function GET(req: NextRequest) {
     ];
 
     if (staff.roles?.length) {
-      const validRoleIds = staff.roles.filter((id) =>
+      const validRoleIds = staff.roles.filter((id: string) =>
         /^[0-9a-fA-F]{24}$/.test(id),
       );
       const legacyRoleNames = staff.roles.filter(
-        (id) => !/^[0-9a-fA-F]{24}$/.test(id),
+        (id: string) => !/^[0-9a-fA-F]{24}$/.test(id),
       );
 
       for (const name of legacyRoleNames) {
