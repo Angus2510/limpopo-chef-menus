@@ -5,6 +5,20 @@ import jwt from "jsonwebtoken";
 import prisma from "@/lib/db";
 import { Permission } from "@/types/auth";
 
+type RolePermissionEntry = {
+  page: string;
+  actions: {
+    view: boolean;
+    edit: boolean;
+    upload: boolean;
+  };
+};
+
+type RoleRow = {
+  roleName: string;
+  permissions: RolePermissionEntry[];
+};
+
 function normalizePermissionLabel(value: string): string {
   return value
     .toLowerCase()
@@ -112,18 +126,19 @@ export async function GET(req: NextRequest) {
       }
 
       if (validRoleIds.length) {
-        const roles = await prisma.roles.findMany({
+        const roles: RoleRow[] = await prisma.roles.findMany({
           where: { id: { in: validRoleIds } },
           select: { permissions: true, roleName: true },
         });
 
         const rolePermissions = roles
-          .flatMap((role) =>
+          .flatMap((role: RoleRow) =>
             role.permissions
               .filter(
-                (p) => p.actions.view || p.actions.edit || p.actions.upload,
+                (p: RolePermissionEntry) =>
+                  p.actions.view || p.actions.edit || p.actions.upload,
               )
-              .map((p) => {
+              .map((p: RolePermissionEntry) => {
                 const perms: Permission[] = [];
                 const pageLower = p.page.toLowerCase();
 

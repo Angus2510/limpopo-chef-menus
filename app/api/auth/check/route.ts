@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { jwtDecode } from "jwt-decode";
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
