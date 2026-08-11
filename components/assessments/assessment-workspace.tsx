@@ -49,7 +49,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -164,6 +163,11 @@ export function AssessmentWorkspace() {
         (assessment) => assessment.code === selectedAssessmentCode,
       ),
     [selectedAssessmentCode],
+  );
+
+  const selectedIntakeGroup = useMemo(
+    () => intakeGroups.find((group) => group.id === selectedIntakeGroupId),
+    [intakeGroups, selectedIntakeGroupId],
   );
 
   const selectedStudent = useMemo(
@@ -458,11 +462,17 @@ export function AssessmentWorkspace() {
                 onValueChange={(value) => setSelectedIntakeGroupId(value ?? "")}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue
-                    placeholder={
-                      loadingGroups ? "Loading groups..." : "Select group"
-                    }
-                  />
+                  <span className="truncate text-left">
+                    {selectedIntakeGroup
+                      ? selectedIntakeGroup.title
+                      : selectedIntakeGroupId
+                        ? loadingGroups
+                          ? "Loading selected group..."
+                          : "Selected group"
+                        : loadingGroups
+                          ? "Loading groups..."
+                          : "Select group"}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   {intakeGroups.map((group) => (
@@ -481,15 +491,19 @@ export function AssessmentWorkspace() {
                 onValueChange={(value) => setSelectedStudentId(value ?? "")}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue
-                    placeholder={
-                      selectedIntakeGroupId
+                  <span className="truncate text-left">
+                    {selectedStudent
+                      ? selectedStudent.fullName
+                      : selectedStudentId
                         ? loadingStudents
-                          ? "Loading students..."
-                          : "Select student"
-                        : "Choose intake first"
-                    }
-                  />
+                          ? "Loading selected student..."
+                          : "Selected student"
+                        : selectedIntakeGroupId
+                          ? loadingStudents
+                            ? "Loading students..."
+                            : "Select student"
+                          : "Choose intake first"}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   {students.map((student) => (
