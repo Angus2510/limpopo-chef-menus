@@ -2,36 +2,28 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  AssessmentBlueprint,
+  AssessmentItemDraft,
+  AssessmentDraftState,
   AssessmentTemplate,
   StudentAssessmentRecord,
 } from "@/types/assessment";
+import {
+  AssessmentEngine,
+  calculateAssessmentScore,
+  createAssessmentBlueprint,
+  createEmptyAssessmentDraft,
+  parseAssessmentDraft,
+  serializeAssessmentDraft,
+} from "@/components/assessments/assessment-engine";
 
 type AssessmentPageProps = {
   template: AssessmentTemplate;
@@ -42,11 +34,52 @@ type AssessmentPageProps = {
   };
 };
 
+type RecentAssessmentSession = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentAdmissionNumber: string;
+  assessmentCode: string;
+  assessmentTitle: string;
+  intakeGroupId: string;
+  openedAt: string;
+};
+
+const RECENT_SESSIONS_STORAGE_KEY = "assessment-workspace-recent-sessions";
+
+function dedupeRecentSessionsByStudent(
+  sessions: RecentAssessmentSession[],
+): RecentAssessmentSession[] {
+  const seen = new Set<string>();
+  const unique: RecentAssessmentSession[] = [];
+
+  for (const session of sessions) {
+    if (seen.has(session.studentId)) {
+      continue;
+    }
+
+    seen.add(session.studentId);
+    unique.push(session);
+  }
+
+  return unique;
+}
+
 export function AssessmentPage({ template, student }: AssessmentPageProps) {
+  const searchParams = useSearchParams();
   const [record, setRecord] = useState<StudentAssessmentRecord | null>(null);
+  const [draft, setDraft] = useState<AssessmentDraftState>(() =>
+    createEmptyAssessmentDraft(createAssessmentBlueprint(template)),
+  );
+  const [hydrated, setHydrated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updating, setUpdating] = useState(false);
+
+  const blueprint = useMemo<AssessmentBlueprint>(
+    () => createAssessmentBlueprint(template),
+    [template],
+  );
 
   const readOnly = useMemo(() => {
     if (!record) {
@@ -56,43 +89,98 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
     return record.completed || record.locked;
   }, [record]);
 
+  const assessmentScore = useMemo(
+    () => calculateAssessmentScore(blueprint, draft),
+    [blueprint, draft],
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const intakeGroupId = searchParams.get("intakeGroupId") ?? "";
+    const sessionId = `${student.id}-${template.code}-${Date.now()}`;
+
+    const nextEntry: RecentAssessmentSession = {
+      id: sessionId,
+      studentId: student.id,
+      studentName: student.fullName,
+      studentAdmissionNumber: student.admissionNumber,
+      assessmentCode: template.code,
+      assessmentTitle: template.title,
+      intakeGroupId,
+      openedAt: new Date().toISOString(),
+    };
+
+    try {
+      const stored = window.localStorage.getItem(RECENT_SESSIONS_STORAGE_KEY);
+      const parsed = stored
+        ? (JSON.parse(stored) as RecentAssessmentSession[])
+        : [];
+      const current = Array.isArray(parsed) ? parsed : [];
+      const nextSessions = dedupeRecentSessionsByStudent([
+        nextEntry,
+        ...current,
+      ]).slice(0, 20);
+
+      window.localStorage.setItem(
+        RECENT_SESSIONS_STORAGE_KEY,
+        JSON.stringify(nextSessions),
+      );
+      window.dispatchEvent(new Event("assessment-recent-sessions-updated"));
+    } catch {
+      // If localStorage is unavailable, skip recent-session write.
+    }
+  }, [
+    searchParams,
+    student.admissionNumber,
+    student.fullName,
+    student.id,
+    template.code,
+    template.title,
+  ]);
+
   useEffect(() => {
     let cancelled = false;
 
-    async function ensureDraft() {
+    async function loadAssessment() {
       setLoading(true);
       setError("");
 
       try {
-        const response = await fetch("/api/student-assessments", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `/api/student-assessments?studentId=${student.id}&assessmentCode=${template.code}`,
+          {
+            cache: "no-store",
           },
-          body: JSON.stringify({
-            studentId: student.id,
-            assessmentCode: template.code,
-          }),
-        });
+        );
 
         const payload = (await response.json()) as {
-          assessment?: StudentAssessmentRecord;
+          assessment?: StudentAssessmentRecord | null;
           error?: string;
         };
 
-        if (!response.ok || !payload.assessment) {
-          throw new Error(payload.error || "Unable to autosave assessment");
+        if (!response.ok) {
+          throw new Error(payload.error || "Unable to load assessment draft");
         }
 
         if (!cancelled) {
-          setRecord(payload.assessment);
+          const loadedRecord = payload.assessment ?? null;
+          setRecord(loadedRecord);
+
+          const parsedDraft = parseAssessmentDraft(
+            loadedRecord?.comments ?? null,
+          );
+          setDraft(parsedDraft ?? createEmptyAssessmentDraft(blueprint));
+          setHydrated(true);
         }
       } catch (requestError) {
         if (!cancelled) {
           const message =
             requestError instanceof Error
               ? requestError.message
-              : "Unable to autosave assessment";
+              : "Unable to load assessment draft";
           setError(message);
           toast.error(message);
         }
@@ -103,12 +191,74 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
       }
     }
 
-    ensureDraft();
+    loadAssessment();
 
     return () => {
       cancelled = true;
     };
-  }, [student.id, template.code]);
+  }, [blueprint, student.id, template.code]);
+
+  useEffect(() => {
+    if (!hydrated || loading || readOnly || error) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const response = await fetch("/api/student-assessments", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              studentId: student.id,
+              assessmentCode: template.code,
+              score: assessmentScore.score,
+              comments: serializeAssessmentDraft(draft),
+            }),
+          });
+
+          const payload = (await response.json()) as {
+            assessment?: StudentAssessmentRecord;
+            error?: string;
+          };
+
+          if (!response.ok || !payload.assessment) {
+            throw new Error(payload.error || "Unable to autosave assessment");
+          }
+
+          setRecord(payload.assessment);
+        } catch (requestError) {
+          const message =
+            requestError instanceof Error
+              ? requestError.message
+              : "Unable to autosave assessment";
+          toast.error(message);
+        }
+      })();
+    }, 700);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [
+    assessmentScore.score,
+    draft,
+    error,
+    hydrated,
+    loading,
+    readOnly,
+    student.id,
+    template.code,
+  ]);
+
+  function updateDraft(itemId: string, nextValue: AssessmentItemDraft) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      [itemId]: nextValue,
+    }));
+  }
 
   async function markComplete() {
     setUpdating(true);
@@ -123,6 +273,8 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
           studentId: student.id,
           assessmentCode: template.code,
           completed: true,
+          score: assessmentScore.score,
+          comments: serializeAssessmentDraft(draft),
         }),
       });
 
@@ -151,18 +303,23 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-lg">{template.title}</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Student: {student.fullName} ({student.admissionNumber})
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">{template.code.toUpperCase()}</Badge>
-            <Badge variant={readOnly ? "secondary" : "default"}>
-              {readOnly ? "Read-only" : "Editable draft"}
-            </Badge>
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="text-lg">{template.title}</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Student: {student.fullName} ({student.admissionNumber})
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{template.code.toUpperCase()}</Badge>
+              <Badge variant={readOnly ? "secondary" : "default"}>
+                {readOnly ? "Read-only" : "Editable draft"}
+              </Badge>
+              <Badge variant="outline">
+                {assessmentScore.score} / {assessmentScore.maxScore}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -173,46 +330,11 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
             >
               Back to Selection
             </Link>
-            <Dialog>
-              <DialogTrigger render={<Button variant="secondary" />}>
-                Assessment Info
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Assessment framework only</DialogTitle>
-                  <DialogDescription>
-                    Criteria and scoring form fields are intentionally not
-                    created yet. This page currently handles routing, state,
-                    autosave, and lock behavior.
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
 
             {!readOnly ? (
-              <AlertDialog>
-                <AlertDialogTrigger render={<Button disabled={updating} />}>
-                  Mark Complete
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Complete assessment?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Once completed, this assessment becomes read-only until an
-                      administrator unlocks it.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={markComplete}
-                      disabled={updating}
-                    >
-                      {updating ? "Saving..." : "Confirm"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button disabled={updating} onClick={markComplete}>
+                {updating ? "Saving..." : "Mark Complete"}
+              </Button>
             ) : null}
           </div>
 
@@ -231,62 +353,16 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
           ) : null}
 
           {!loading && !error ? (
-            <Tabs defaultValue="overview">
-              <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="sections">Sections</TabsTrigger>
-                <TabsTrigger value="status">Status</TabsTrigger>
-              </TabsList>
-              <TabsContent value="overview" className="pt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      Empty assessment page
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Assessment form fields and criteria are not implemented
-                      yet.
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="sections" className="pt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      Sections placeholder
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Section and criterion rendering will be added in the next
-                      step.
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="status" className="pt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      Assessment status
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <p>Completed: {record?.completed ? "Yes" : "No"}</p>
-                    <p>Locked: {record?.locked ? "Yes" : "No"}</p>
-                    <p>
-                      Last saved:{" "}
-                      {record
-                        ? new Date(record.updatedAt).toLocaleString()
-                        : "-"}
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+            <AssessmentEngine
+              blueprint={blueprint}
+              draft={draft}
+              readOnly={readOnly}
+              completed={Boolean(record?.completed)}
+              score={assessmentScore.score}
+              maxScore={assessmentScore.maxScore}
+              percentage={assessmentScore.percentage}
+              onChange={updateDraft}
+            />
           ) : null}
         </CardContent>
       </Card>

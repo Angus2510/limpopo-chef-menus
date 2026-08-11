@@ -55,6 +55,8 @@ export async function POST(req: NextRequest) {
     const payload = (await req.json()) as {
       studentId?: string;
       assessmentCode?: string;
+      score?: number;
+      comments?: string;
     };
 
     const studentId = String(payload.studentId || "").trim();
@@ -102,11 +104,17 @@ export async function POST(req: NextRequest) {
         assessmentCode: template.code,
         assessmentTitle: template.title,
         assessmentCategory: template.category,
+        score: typeof payload.score === "number" ? payload.score : null,
+        comments:
+          typeof payload.comments === "string" ? payload.comments : null,
         completed: false,
         locked: false,
       },
       update: {
         assessorId: auth.staffId,
+        score: typeof payload.score === "number" ? payload.score : undefined,
+        comments:
+          typeof payload.comments === "string" ? payload.comments : undefined,
       },
     });
 
@@ -132,6 +140,8 @@ export async function PATCH(req: NextRequest) {
       assessmentCode?: string;
       completed?: boolean;
       unlock?: boolean;
+      score?: number;
+      comments?: string;
     };
 
     const studentId = String(payload.studentId || "").trim();
@@ -176,6 +186,9 @@ export async function PATCH(req: NextRequest) {
         completed,
         locked: completed ? true : current.locked,
         assessorId: auth.staffId,
+        score: typeof payload.score === "number" ? payload.score : undefined,
+        comments:
+          typeof payload.comments === "string" ? payload.comments : undefined,
       },
     });
 
