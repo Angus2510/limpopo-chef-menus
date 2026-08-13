@@ -1,11 +1,179 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { ASSESSMENT_TEMPLATES } from "@/lib/assessment-catalog";
+import { createAssessmentBlueprint } from "@/components/assessments/blueprints";
+import {
+  ASSESSMENT_COMPETENCY_THRESHOLDS,
+  ASSESSMENT_TEMPLATES,
+} from "@/lib/assessment-catalog";
 import { getStaffIdFromRequest, isObjectId } from "@/lib/auth-token";
 import prisma from "@/lib/db";
+import type { AssessmentItem } from "@/types/assessment";
 
 function getTemplateByCode(code: string) {
   return ASSESSMENT_TEMPLATES.find((template) => template.code === code);
+}
+
+function getItemMaxMark(item: AssessmentItem): number {
+  if (
+    item.type === "checkbox" ||
+    item.type === "recipe-card" ||
+    item.type === "practical-dish"
+  ) {
+    return item.maxMark;
+  }
+
+  if (item.type === "group") {
+    return item.items.reduce(
+      (runningTotal, childItem) => runningTotal + getItemMaxMark(childItem),
+      0,
+    );
+  }
+
+  return 0;
+}
+
+function getBlueprintMaxScore(code: string): number | null {
+  const template = getTemplateByCode(code);
+  if (!template) {
+    return null;
+  }
+
+  const blueprint = createAssessmentBlueprint(template);
+  return blueprint.sections.reduce(
+    (runningTotal, section) =>
+      runningTotal +
+      section.items.reduce(
+        (sectionTotal, item) => sectionTotal + getItemMaxMark(item),
+        0,
+      ),
+    0,
+  );
+}
+
+function buildOutcomeTitleCandidates(templateTitle: string): string[] {
+  const candidates = new Set<string>([templateTitle]);
+  const finalSuffix = /\s+Final Summative Practical Exam$/i;
+  const variantSuffix = /\s+(?:CATHSSETA|DIPLOMA|OCG)$/i;
+
+  if (finalSuffix.test(templateTitle)) {
+    const baseTitle = templateTitle.replace(finalSuffix, "").trim();
+    candidates.add(`${baseTitle}- Final Summative Practical Exam`);
+    candidates.add(`${baseTitle}: Final summative practical exam`);
+  }
+
+  if (variantSuffix.test(templateTitle)) {
+    candidates.add(templateTitle.replace(variantSuffix, "").trim());
+  }
+
+  return [...candidates];
+}
+
+function getOutcomePriority(type: string | null | undefined): number {
+  const normalizedType = String(type ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (normalizedType === "practical") {
+    return 3;
+  }
+
+  if (normalizedType.includes("practical")) {
+    return 2;
+  }
+
+  if (normalizedType.includes("exam")) {
+    return 1;
+  }
+
+  return 0;
+}
+
+async function syncPortalResult(params: {
+  studentId: string;
+  assessmentCode: string;
+  rawScore: number;
+  updatedBy: string;
+}) {
+  const template = getTemplateByCode(params.assessmentCode);
+  if (!template) {
+    return;
+  }
+
+  const maxScore = getBlueprintMaxScore(params.assessmentCode);
+  if (!maxScore || maxScore <= 0) {
+    return;
+  }
+
+  const percentage = Number(((params.rawScore / maxScore) * 100).toFixed(2));
+  const competencyThreshold =
+    ASSESSMENT_COMPETENCY_THRESHOLDS[params.assessmentCode] ?? 70;
+  const competency = percentage >= competencyThreshold;
+  const candidateTitles = buildOutcomeTitleCandidates(template.title);
+
+  const outcomes = await prisma.outcomes.findMany({
+    where: {
+      title: { in: candidateTitles },
+    },
+    select: {
+      id: true,
+      title: true,
+      type: true,
+    },
+  });
+
+  const selectedOutcome = [...outcomes].sort((left, right) => {
+    return getOutcomePriority(right.type) - getOutcomePriority(left.type);
+  })[0];
+
+  if (!selectedOutcome) {
+    console.warn(
+      `No portal outcome mapping found for assessment ${params.assessmentCode} (${template.title})`,
+    );
+    return;
+  }
+
+  const existing = await prisma.results.findFirst({
+    where: {
+      studentId: params.studentId,
+      outcomeId: selectedOutcome.id,
+      source: "manual",
+    },
+    orderBy: {
+      dateCreated: "desc",
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (existing) {
+    await prisma.results.update({
+      where: { id: existing.id },
+      data: {
+        testScore: percentage,
+        taskScore: percentage,
+        mark: percentage,
+        average: percentage,
+        competency,
+        updatedBy: params.updatedBy,
+      },
+    });
+    return;
+  }
+
+  await prisma.results.create({
+    data: {
+      studentId: params.studentId,
+      outcomeId: selectedOutcome.id,
+      testScore: percentage,
+      taskScore: percentage,
+      mark: percentage,
+      average: percentage,
+      competency,
+      source: "manual",
+      updatedBy: params.updatedBy,
+    },
+  });
 }
 
 export async function GET(req: NextRequest) {
@@ -191,6 +359,15 @@ export async function PATCH(req: NextRequest) {
           typeof payload.comments === "string" ? payload.comments : undefined,
       },
     });
+
+    if (completed && typeof payload.score === "number") {
+      await syncPortalResult({
+        studentId,
+        assessmentCode,
+        rawScore: payload.score,
+        updatedBy: auth.staffId,
+      });
+    }
 
     return NextResponse.json({ assessment: updated });
   } catch (error) {

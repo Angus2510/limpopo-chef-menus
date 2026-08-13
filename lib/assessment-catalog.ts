@@ -79,7 +79,72 @@ function buildTemplates(): AssessmentTemplate[] {
   return templates;
 }
 
-export const ASSESSMENT_TEMPLATES: AssessmentTemplate[] = buildTemplates();
+const EXTRA_ASSESSMENT_TEMPLATES: AssessmentTemplate[] = [
+  {
+    id: "menu-b-1-cathsseta",
+    code: "menu-b1-cathsseta",
+    title: "Menu B1 CATHSSETA",
+    category: "menu-b",
+  },
+  {
+    id: "menu-b-2-cathsseta",
+    code: "menu-b2-cathsseta",
+    title: "Menu B2 CATHSSETA",
+    category: "menu-b",
+  },
+  {
+    id: "menu-b-3-cathsseta",
+    code: "menu-b3-cathsseta",
+    title: "Menu B3 CATHSSETA",
+    category: "menu-b",
+  },
+  {
+    id: "menu-b-5-cathsseta",
+    code: "menu-b5-cathsseta",
+    title: "Menu B5 CATHSSETA",
+    category: "menu-b",
+  },
+  {
+    id: "menu-b-6-cathsseta",
+    code: "menu-b6-cathsseta",
+    title: "Menu B6 CATHSSETA",
+    category: "menu-b",
+  },
+  {
+    id: "menu-b-7-ocg",
+    code: "menu-b7-ocg",
+    title: "Menu B7 OCG",
+    category: "menu-b",
+  },
+  {
+    id: "menu-b-7-diploma",
+    code: "menu-b7-diploma",
+    title: "Menu B7 DIPLOMA",
+    category: "menu-b",
+  },
+  {
+    id: "menu-b-7-cathsseta",
+    code: "menu-b7-cathsseta",
+    title: "Menu B7 CATHSSETA",
+    category: "menu-b",
+  },
+];
+
+export const ASSESSMENT_TEMPLATES: AssessmentTemplate[] = [
+  ...buildTemplates(),
+  ...EXTRA_ASSESSMENT_TEMPLATES,
+];
+
+export const ASSESSMENT_COMPETENCY_THRESHOLDS: Record<string, number> = {
+  "menu-b6": 70,
+  "menu-b6-cathsseta": 70,
+  "menu-b7-diploma": 70,
+  "menu-b7-cathsseta": 70,
+  "menu-b8": 70,
+  "menu-b9": 70,
+  "menu-c1": 70,
+  "menu-c2": 70,
+};
 
 export const ASSESSMENT_CATEGORY_LABELS: Record<AssessmentCategory, string> = {
   menu: "Menu",
