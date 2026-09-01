@@ -66,6 +66,7 @@ import {
 } from "@/lib/assessment-catalog";
 import {
   AssessmentTemplate,
+  CampusOption,
   IntakeGroupOption,
   StudentOption,
 } from "@/types/assessment";
@@ -88,6 +89,7 @@ type RecentAssessmentSession = {
 };
 
 type WorkspaceSelectionState = {
+  campusId: string;
   intakeGroupId: string;
   studentId: string;
   assessmentCode: string;
@@ -129,6 +131,9 @@ function persistRecentSessions(nextSessions: RecentAssessmentSession[]) {
 export function AssessmentWorkspace() {
   const router = useRouter();
 
+  const [campuses, setCampuses] = useState<CampusOption[]>([]);
+  const [selectedCampusId, setSelectedCampusId] = useState("");
+  const [loadingCampuses, setLoadingCampuses] = useState(true);
   const [intakeGroups, setIntakeGroups] = useState<IntakeGroupOption[]>([]);
   const [selectedIntakeGroupId, setSelectedIntakeGroupId] = useState("");
   const [students, setStudents] = useState<StudentOption[]>([]);
@@ -168,6 +173,11 @@ export function AssessmentWorkspace() {
   const selectedIntakeGroup = useMemo(
     () => intakeGroups.find((group) => group.id === selectedIntakeGroupId),
     [intakeGroups, selectedIntakeGroupId],
+  );
+
+  const selectedCampus = useMemo(
+    () => campuses.find((campus) => campus.id === selectedCampusId),
+    [campuses, selectedCampusId],
   );
 
   const selectedStudent = useMemo(
@@ -223,6 +233,9 @@ export function AssessmentWorkspace() {
 
       const parsed = JSON.parse(stored) as Partial<WorkspaceSelectionState>;
 
+      setSelectedCampusId(
+        typeof parsed.campusId === "string" ? parsed.campusId : "",
+      );
       setSelectedIntakeGroupId(
         typeof parsed.intakeGroupId === "string" ? parsed.intakeGroupId : "",
       );
@@ -233,6 +246,7 @@ export function AssessmentWorkspace() {
         typeof parsed.assessmentCode === "string" ? parsed.assessmentCode : "",
       );
     } catch {
+      setSelectedCampusId("");
       setSelectedIntakeGroupId("");
       setSelectedStudentId("");
       setSelectedAssessmentCode("");
@@ -247,6 +261,7 @@ export function AssessmentWorkspace() {
     }
 
     const snapshot: WorkspaceSelectionState = {
+      campusId: selectedCampusId,
       intakeGroupId: selectedIntakeGroupId,
       studentId: selectedStudentId,
       assessmentCode: selectedAssessmentCode,
@@ -256,7 +271,54 @@ export function AssessmentWorkspace() {
       WORKSPACE_SELECTION_STORAGE_KEY,
       JSON.stringify(snapshot),
     );
-  }, [selectedIntakeGroupId, selectedStudentId, selectedAssessmentCode]);
+  }, [
+    selectedCampusId,
+    selectedIntakeGroupId,
+    selectedStudentId,
+    selectedAssessmentCode,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCampuses() {
+      setLoadingCampuses(true);
+
+      try {
+        const response = await fetch("/api/campuses", {
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as {
+          campuses?: CampusOption[];
+          error?: string;
+        };
+
+        if (!response.ok) {
+          throw new Error(payload.error || "Unable to load campuses");
+        }
+
+        if (!cancelled) {
+          setCampuses(payload.campuses ?? []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message =
+            error instanceof Error ? error.message : "Unable to load campuses";
+          toast.error(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingCampuses(false);
+        }
+      }
+    }
+
+    loadCampuses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -322,12 +384,16 @@ export function AssessmentWorkspace() {
       setErrorMessage("");
 
       try {
-        const response = await fetch(
-          `/api/students?intakeGroupId=${selectedIntakeGroupId}`,
-          {
-            cache: "no-store",
-          },
-        );
+        const params = new URLSearchParams({
+          intakeGroupId: selectedIntakeGroupId,
+        });
+        if (selectedCampusId) {
+          params.set("campusId", selectedCampusId);
+        }
+
+        const response = await fetch(`/api/students?${params.toString()}`, {
+          cache: "no-store",
+        });
         const payload = (await response.json()) as {
           students?: StudentOption[];
           error?: string;
@@ -371,7 +437,7 @@ export function AssessmentWorkspace() {
     return () => {
       cancelled = true;
     };
-  }, [selectedIntakeGroupId, selectionHydrated]);
+  }, [selectedIntakeGroupId, selectedCampusId, selectionHydrated]);
 
   function addRecentSession() {
     if (!selectedStudent || !selectedAssessment) {
@@ -420,6 +486,7 @@ export function AssessmentWorkspace() {
   }
 
   function resetSelections() {
+    setSelectedCampusId("");
     setSelectedIntakeGroupId("");
     setStudents([]);
     setSelectedStudentId("");
@@ -435,7 +502,7 @@ export function AssessmentWorkspace() {
             <div>
               <CardTitle>Assessment Selection</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Choose intake group, student, and assessment menu.
+                Choose intake group, campus, student, and assessment menu.
               </p>
             </div>
             <Dialog>
@@ -454,7 +521,7 @@ export function AssessmentWorkspace() {
               </DialogContent>
             </Dialog>
           </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-3">
+          <CardContent className="grid gap-3 md:grid-cols-4">
             <div className="space-y-2">
               <p className="text-sm font-medium">Intake Group</p>
               <Select
@@ -478,6 +545,31 @@ export function AssessmentWorkspace() {
                   {intakeGroups.map((group) => (
                     <SelectItem key={group.id} value={group.id}>
                       {group.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Campus</p>
+              <Select
+                value={selectedCampusId}
+                onValueChange={(value) => setSelectedCampusId(value ?? "")}
+              >
+                <SelectTrigger className="w-full">
+                  <span className="truncate text-left">
+                    {selectedCampus
+                      ? selectedCampus.title
+                      : loadingCampuses
+                        ? "Loading campuses..."
+                        : "All campuses"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  {campuses.map((campus) => (
+                    <SelectItem key={campus.id} value={campus.id}>
+                      {campus.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -532,7 +624,7 @@ export function AssessmentWorkspace() {
               </div>
             </div>
 
-            <div className="md:col-span-3">
+            <div className="md:col-span-4">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">
                   {intakeGroups.length} Intake Groups

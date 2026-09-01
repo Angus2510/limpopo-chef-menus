@@ -10,12 +10,17 @@ export async function GET(req: NextRequest) {
   }
 
   const intakeGroupId = req.nextUrl.searchParams.get("intakeGroupId")?.trim();
+  const campusId = req.nextUrl.searchParams.get("campusId")?.trim();
 
   if (!intakeGroupId || !isObjectId(intakeGroupId)) {
     return NextResponse.json(
       { error: "Valid intakeGroupId is required" },
       { status: 400 },
     );
+  }
+
+  if (campusId && !isObjectId(campusId)) {
+    return NextResponse.json({ error: "Invalid campusId" }, { status: 400 });
   }
 
   try {
@@ -25,6 +30,7 @@ export async function GET(req: NextRequest) {
         intakeGroup: {
           has: intakeGroupId,
         },
+        ...(campusId ? { campus: { has: campusId } } : {}),
       },
       select: {
         id: true,

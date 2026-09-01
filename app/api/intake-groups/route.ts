@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/db";
-import { getStaffIdFromRequest } from "@/lib/auth-token";
+import { getStaffIdFromRequest, isObjectId } from "@/lib/auth-token";
 
 export async function GET(req: NextRequest) {
   const auth = getStaffIdFromRequest(req);
@@ -9,11 +9,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
+  const campusId = req.nextUrl.searchParams.get("campusId")?.trim();
+
+  if (campusId && !isObjectId(campusId)) {
+    return NextResponse.json({ error: "Invalid campusId" }, { status: 400 });
+  }
+
   try {
     const intakeGroups = await prisma.intakegroups.findMany({
+      where: {
+        ...(campusId ? { campus: { has: campusId } } : {}),
+      },
       select: {
         id: true,
         title: true,
+        campus: true,
       },
       orderBy: {
         title: "asc",

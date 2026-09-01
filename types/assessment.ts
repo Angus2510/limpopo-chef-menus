@@ -113,9 +113,15 @@ export type AssessmentItemDraft =
 
 export type AssessmentDraftState = Record<string, AssessmentItemDraft>;
 
+export type CampusOption = {
+  id: string;
+  title: string;
+};
+
 export type IntakeGroupOption = {
   id: string;
   title: string;
+  campus: string[];
 };
 
 export type StudentOption = {

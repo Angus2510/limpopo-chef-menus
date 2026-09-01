@@ -359,7 +359,7 @@ model guardians {
 model intakegroups {
   id      String   @id @default(auto()) @map("_id") @db.ObjectId
   v       Int      @map("__v")
-  campus  String[]
+  campus  String[] @db.ObjectId
   outcome String[]
   title   String
 }
