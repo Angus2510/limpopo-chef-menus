@@ -57,7 +57,7 @@ export function SidebarNav() {
           return;
         }
 
-        setRecentSessions(parsed.slice(0, 20));
+        setRecentSessions(parsed.slice(0, 27));
       } catch {
         setRecentSessions([]);
       }

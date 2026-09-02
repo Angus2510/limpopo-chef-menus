@@ -198,7 +198,7 @@ export function AssessmentWorkspace() {
 
       const parsed = JSON.parse(stored) as RecentAssessmentSession[];
       if (Array.isArray(parsed)) {
-        setRecentSessions(dedupeRecentSessionsByStudent(parsed).slice(0, 20));
+        setRecentSessions(dedupeRecentSessionsByStudent(parsed).slice(0, 27));
       }
     } catch {
       setRecentSessions([]);
@@ -458,7 +458,7 @@ export function AssessmentWorkspace() {
     const nextSessions = dedupeRecentSessionsByStudent([
       nextEntry,
       ...recentSessions,
-    ]).slice(0, 20);
+    ]).slice(0, 27);
 
     setRecentSessions(nextSessions);
     persistRecentSessions(nextSessions);

@@ -122,7 +122,7 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
       const nextSessions = dedupeRecentSessionsByStudent([
         nextEntry,
         ...current,
-      ]).slice(0, 20);
+      ]).slice(0, 27);
 
       window.localStorage.setItem(
         RECENT_SESSIONS_STORAGE_KEY,
