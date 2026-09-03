@@ -81,13 +81,7 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
     [template],
   );
 
-  const readOnly = useMemo(() => {
-    if (!record) {
-      return false;
-    }
-
-    return record.completed || record.locked;
-  }, [record]);
+  const readOnly = false;
 
   const assessmentScore = useMemo(
     () => calculateAssessmentScore(blueprint, draft),
@@ -288,7 +282,11 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
       }
 
       setRecord(payload.assessment);
-      toast.success("Assessment marked complete and locked");
+      toast.success(
+        payload.assessment.completed
+          ? "Assessment saved and remains editable"
+          : "Assessment saved",
+      );
     } catch (requestError) {
       const message =
         requestError instanceof Error
@@ -313,8 +311,8 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
             </div>
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline">{template.code.toUpperCase()}</Badge>
-              <Badge variant={readOnly ? "secondary" : "default"}>
-                {readOnly ? "Read-only" : "Editable draft"}
+              <Badge variant="default">
+                {record?.completed ? "Completed · Editable" : "Editable draft"}
               </Badge>
               <Badge variant="outline">
                 {assessmentScore.score} / {assessmentScore.maxScore}
@@ -333,7 +331,11 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
 
             {!readOnly ? (
               <Button disabled={updating} onClick={markComplete}>
-                {updating ? "Saving..." : "Mark Complete"}
+                {updating
+                  ? "Saving..."
+                  : record?.completed
+                    ? "Save Changes"
+                    : "Mark Complete"}
               </Button>
             ) : null}
           </div>

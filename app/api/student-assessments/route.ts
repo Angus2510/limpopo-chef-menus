@@ -286,6 +286,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (assessment.completed && typeof payload.score === "number") {
+      await syncPortalResult({
+        studentId,
+        assessmentCode,
+        rawScore: payload.score,
+        updatedBy: auth.staffId,
+      });
+    }
+
     return NextResponse.json({ assessment });
   } catch (error) {
     console.error("Failed to autosave student assessment:", error);
@@ -337,13 +346,6 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         { error: "Student assessment not found" },
         { status: 404 },
-      );
-    }
-
-    if (current.locked && payload.unlock !== true) {
-      return NextResponse.json(
-        { error: "Assessment is locked and read-only" },
-        { status: 423 },
       );
     }
 
