@@ -2,6 +2,7 @@ import type {
   AssessmentBlueprint,
   AssessmentTemplate,
 } from "@/types/assessment";
+import { COSTING_COMMENT_OPTIONS } from "@/types/assessment";
 
 export function createMenuBBlueprint(
   template: AssessmentTemplate,
@@ -3436,6 +3437,7 @@ export function createMenuBBlueprint(
               dishName:
                 "Overall Costings & Selling Prices Correctly Calculated",
               maxMark: 4,
+              commentOptions: COSTING_COMMENT_OPTIONS,
             },
           ],
         },
@@ -4283,6 +4285,7 @@ export function createMenuBBlueprint(
               type: "practical-dish",
               dishName: "Overall Costings & Selling Prices",
               maxMark: 4,
+              commentOptions: COSTING_COMMENT_OPTIONS,
             },
           ],
         },
@@ -4653,6 +4656,7 @@ export function createMenuBBlueprint(
               type: "practical-dish",
               dishName: "Overall Costings & Selling Prices",
               maxMark: 4,
+              commentOptions: COSTING_COMMENT_OPTIONS,
             },
           ],
         },
@@ -4829,6 +4833,7 @@ export function createMenuBBlueprint(
               type: "practical-dish",
               dishName: "Overall Costings & Selling Prices",
               maxMark: 4,
+              commentOptions: COSTING_COMMENT_OPTIONS,
             },
           ],
         },

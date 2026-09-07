@@ -37,6 +37,7 @@ import type {
   PracticalDishAssessmentItem,
   RecipeCardAssessmentDraft,
   RecipeCardAssessmentItem,
+  COSTING_COMMENT_OPTIONS,
 } from "@/types/assessment";
 
 export const COMMENT_OPTIONS: AssessmentCommentOption[] = [
@@ -436,6 +437,7 @@ type CommentSelectorProps = {
   value: AssessmentCommentOption[];
   otherComment: string;
   readOnly: boolean;
+  options?: AssessmentCommentOption[];
   onChange: (nextValue: {
     value: AssessmentCommentOption[];
     otherComment: string;
@@ -446,6 +448,7 @@ export function CommentSelector({
   value,
   otherComment,
   readOnly,
+  options = COMMENT_OPTIONS,
   onChange,
 }: CommentSelectorProps) {
   const selected = useMemo(() => new Set(value), [value]);
@@ -476,7 +479,7 @@ export function CommentSelector({
       <CardContent className="space-y-3">
         <ScrollArea className="h-52 rounded-lg border p-3">
           <div className="space-y-2">
-            {COMMENT_OPTIONS.map((option) => (
+            {options.map((option) => (
               <label key={option} className="flex items-center gap-3 text-sm">
                 <Checkbox
                   checked={selected.has(option)}
@@ -539,6 +542,7 @@ export function PracticalDishCard({
           value={value.comments}
           otherComment={value.otherComment}
           readOnly={readOnly}
+          options={item.commentOptions}
           onChange={({ value: comments, otherComment }) =>
             onChange({ ...value, comments, otherComment })
           }

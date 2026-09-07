@@ -31,7 +31,20 @@ export type AssessmentCommentOption =
   | "Cold plate"
   | "Served late"
   | "Served on time"
-  | "Other";
+  | "Other"
+  | "100% Correctly Calculated — 4 marks"
+  | "75% Correctly Calculated — 3 marks"
+  | "50% Correctly Calculated — 2 marks"
+  | "25% Correctly Calculated — 1 mark"
+  | "0% / Not Correctly Calculated — 0 marks";
+
+export const COSTING_COMMENT_OPTIONS: AssessmentCommentOption[] = [
+  "100% Correctly Calculated — 4 marks",
+  "75% Correctly Calculated — 3 marks",
+  "50% Correctly Calculated — 2 marks",
+  "25% Correctly Calculated — 1 mark",
+  "0% / Not Correctly Calculated — 0 marks",
+];
 
 export type CheckboxAssessmentItem = {
   id: string;
@@ -52,6 +65,7 @@ export type PracticalDishAssessmentItem = {
   type: "practical-dish";
   dishName: string;
   maxMark: number;
+  commentOptions?: AssessmentCommentOption[];
 };
 
 export type NotesAssessmentItem = {
