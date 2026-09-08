@@ -43,5 +43,10 @@
     "prisma": "^6.3.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "next-themes@0.4.6": "patches/next-themes@0.4.6.patch"
+    }
   }
 }

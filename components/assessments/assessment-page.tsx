@@ -338,6 +338,15 @@ export function AssessmentPage({ template, student }: AssessmentPageProps) {
                     : "Mark Complete"}
               </Button>
             ) : null}
+
+            <Link
+              href={`/print/assessment/${template.code}?studentId=${student.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({ variant: "outline" })}
+            >
+              Download PDF
+            </Link>
           </div>
 
           <Separator />
