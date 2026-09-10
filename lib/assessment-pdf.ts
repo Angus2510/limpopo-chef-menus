@@ -49,7 +49,7 @@ function addItemLines(
     const recipeValue = value as RecipeCardAssessmentDraft | undefined;
     lines.push(`${indent}${item.recipeName} - ${score} / ${maxMark}`);
     lines.push(
-      `${indent}  [${recipeValue?.recipeCompleted ?? true ? "x" : " "}] Recipe Completed   [${recipeValue?.costingAppropriate ?? true ? "x" : " "}] Costing Appropriate`,
+      `${indent}  [${(recipeValue?.recipeCompleted ?? true) ? "x" : " "}] Recipe Completed   [${(recipeValue?.costingAppropriate ?? true) ? "x" : " "}] Costing Appropriate`,
     );
     return;
   }
@@ -126,7 +126,9 @@ export function createAssessmentPdf(params: {
         document
           .font("Helvetica-Bold")
           .fontSize(11)
-          .text(`${section.title} - ${sectionScore.score} / ${sectionScore.maxScore}`);
+          .text(
+            `${section.title} - ${sectionScore.score} / ${sectionScore.maxScore}`,
+          );
         document.moveDown(0.15);
 
         const lines: string[] = [];
