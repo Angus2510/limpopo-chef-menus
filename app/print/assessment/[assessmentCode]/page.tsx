@@ -82,7 +82,9 @@ export default async function PrintAssessmentRoute({
 
   return (
     <div className="min-h-full bg-background">
-      <PrintActions />
+      <PrintActions
+        downloadUrl={`/api/student-assessments/pdf?studentId=${student.id}&assessmentCode=${template.code}`}
+      />
       <AssessmentPrintReport
         blueprint={blueprint}
         draft={draft}
