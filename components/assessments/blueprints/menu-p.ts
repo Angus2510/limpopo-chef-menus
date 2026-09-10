@@ -452,6 +452,91 @@ export function createMenuPBlueprint(
     };
   }
 
+  if (template.code === "menu-p14") {
+    const checkboxItems = (prefix: string, descriptions: string[]) =>
+      descriptions.map((description, index) => ({
+        id: `${template.id}-${prefix}-${index + 1}`,
+        type: "checkbox" as const,
+        description,
+        maxMark: 1,
+      }));
+
+    return {
+      ...template,
+      sections: [
+        {
+          id: `${template.id}-section-personal-professionalism`,
+          title: "Personal Professionalism",
+          order: 1,
+          items: checkboxItems("personal", [
+            "Student is Dressed in Full Chef Uniform - Cleaned & Ironed",
+            "Student is Neatly Groomed (Facial hair, makeup ect.)",
+            "Student show respect of Authority",
+          ]),
+        },
+        {
+          id: `${template.id}-section-recipe-planning`,
+          title: "Recipe Planning Forms",
+          order: 2,
+          items: [
+            {
+              id: `${template.id}-recipe-white-chocolate-panna-cotta`,
+              type: "recipe-card",
+              recipeName: "White Chocolate Panna Cotta",
+              maxMark: 2,
+            },
+            {
+              id: `${template.id}-recipe-spiced-red-wine-poached-pear`,
+              type: "recipe-card",
+              recipeName: "Spiced Red Wine Poached Pear",
+              maxMark: 2,
+            },
+            {
+              id: `${template.id}-recipe-almond-tuile`,
+              type: "recipe-card",
+              recipeName: "Almond Tuile",
+              maxMark: 2,
+            },
+          ],
+        },
+        {
+          id: `${template.id}-section-kitchen-hygiene`,
+          title: "Kitchen & Hygiene",
+          order: 3,
+          items: checkboxItems("hygiene", [
+            "The student displays regular hand washing",
+            "Clean as you go is practiced",
+            "Good tasting practices & sanitizer bucket kept clean",
+            "Scullary area is kept clean & correct sinks used",
+          ]),
+        },
+        {
+          id: `${template.id}-section-professional-operation`,
+          title: "Professional Operation",
+          order: 4,
+          items: checkboxItems("operation", [
+            "Student selects appropriate equipment and utensils",
+            "Student controls the cooking process (time & temp)",
+            "Student works from prep lists/sheets (check time)",
+            "Student works in a methodical manner, check waste",
+          ]),
+        },
+        {
+          id: `${template.id}-section-feedback`,
+          title: "Lecturer Feedback",
+          order: 5,
+          items: [
+            {
+              id: `${template.id}-feedback`,
+              type: "notes",
+              label: "Lecturer Feedback",
+            },
+          ],
+        },
+      ],
+    };
+  }
+
   if (template.code === "menu-p13") {
     const checkboxItems = (prefix: string, descriptions: string[]) =>
       descriptions.map((description, index) => ({
