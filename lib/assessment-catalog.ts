@@ -26,7 +26,7 @@ const definitions: MenuDefinition[] = [
     prefix: "B",
     count: 9,
     finalLabel: {
-      9: "Final Summative Practical Exam",
+      9: ": Final summative practical exam",
     },
   },
   {

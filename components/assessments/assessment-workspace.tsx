@@ -612,13 +612,21 @@ export function AssessmentWorkspace() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1 justify-start"
+                  className="min-w-0 flex-1 justify-start"
                   onClick={() => setAssessmentSearchOpen(true)}
                 >
-                  <Search />
-                  {selectedAssessment ? selectedAssessment.title : "Find menu"}
+                  <Search className="shrink-0" />
+                  <span className="truncate">
+                    {selectedAssessment
+                      ? selectedAssessment.title
+                      : "Find menu"}
+                  </span>
                 </Button>
-                <Button variant="secondary" onClick={openAssessment}>
+                <Button
+                  variant="secondary"
+                  className="shrink-0"
+                  onClick={openAssessment}
+                >
                   Open
                 </Button>
               </div>
