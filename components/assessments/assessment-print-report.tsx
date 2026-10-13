@@ -87,10 +87,12 @@ function AssessmentItemRow({
         </p>
         {!recipeValue?.recipeCompleted && recipeValue?.recipeCompletedReason ? (
           <p className="text-xs text-muted-foreground">
-            Recipe completion mark not awarded: {recipeValue.recipeCompletedReason}
+            Recipe completion mark not awarded:{" "}
+            {recipeValue.recipeCompletedReason}
           </p>
         ) : null}
-        {!recipeValue?.costingAppropriate && recipeValue?.costingAppropriateReason ? (
+        {!recipeValue?.costingAppropriate &&
+        recipeValue?.costingAppropriateReason ? (
           <p className="text-xs text-muted-foreground">
             Costing mark not awarded: {recipeValue.costingAppropriateReason}
           </p>

@@ -410,8 +410,7 @@ export function PracticalDishCard({
                 onChange({
                   ...value,
                   score: Number(nextValue),
-                  reason:
-                    Number(nextValue) >= item.maxMark ? "" : value.reason,
+                  reason: Number(nextValue) >= item.maxMark ? "" : value.reason,
                 })
               }
             >
