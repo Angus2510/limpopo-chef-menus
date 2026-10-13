@@ -101,11 +101,14 @@ export type AssessmentBlueprint = AssessmentTemplate & {
 
 export type CheckboxAssessmentDraft = {
   checked: boolean;
+  reason?: string;
 };
 
 export type RecipeCardAssessmentDraft = {
   recipeCompleted: boolean;
   costingAppropriate: boolean;
+  recipeCompletedReason?: string;
+  costingAppropriateReason?: string;
 };
 
 export type PracticalDishAssessmentDraft = {
@@ -113,6 +116,7 @@ export type PracticalDishAssessmentDraft = {
   comments: AssessmentCommentOption[];
   otherComment: string;
   notes: string;
+  reason?: string;
 };
 
 export type NotesAssessmentDraft = {

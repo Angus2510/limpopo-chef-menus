@@ -37,11 +37,14 @@ function addItemLines(
   const maxMark = getItemMaxMark(item);
 
   if (item.type === "checkbox") {
-    const checked =
-      (value as CheckboxAssessmentDraft | undefined)?.checked ?? true;
+    const checkboxValue = value as CheckboxAssessmentDraft | undefined;
+    const checked = checkboxValue?.checked ?? true;
     lines.push(
       `${indent}[${checked ? "x" : " "}] ${item.description} - ${score} / ${maxMark}`,
     );
+    if (!checked && checkboxValue?.reason) {
+      lines.push(`${indent}  Reason mark not awarded: ${checkboxValue.reason}`);
+    }
     return;
   }
 
@@ -51,6 +54,19 @@ function addItemLines(
     lines.push(
       `${indent}  [${(recipeValue?.recipeCompleted ?? true) ? "x" : " "}] Recipe Completed   [${(recipeValue?.costingAppropriate ?? true) ? "x" : " "}] Costing Appropriate`,
     );
+    if (!recipeValue?.recipeCompleted && recipeValue?.recipeCompletedReason) {
+      lines.push(
+        `${indent}  Recipe completion mark not awarded: ${recipeValue.recipeCompletedReason}`,
+      );
+    }
+    if (
+      !recipeValue?.costingAppropriate &&
+      recipeValue?.costingAppropriateReason
+    ) {
+      lines.push(
+        `${indent}  Costing mark not awarded: ${recipeValue.costingAppropriateReason}`,
+      );
+    }
     return;
   }
 
@@ -65,6 +81,9 @@ function addItemLines(
     }
     if (dishValue?.notes) {
       lines.push(`${indent}  Notes: ${dishValue.notes}`);
+    }
+    if (score < maxMark && dishValue?.reason) {
+      lines.push(`${indent}  Reason marks not awarded: ${dishValue.reason}`);
     }
     return;
   }

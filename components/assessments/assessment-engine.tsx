@@ -142,7 +142,13 @@ export function ChecklistItem({
         <Checkbox
           checked={value.checked}
           disabled={readOnly}
-          onCheckedChange={(checked) => onChange({ checked: checked === true })}
+          onCheckedChange={(checked) =>
+            onChange({
+              ...value,
+              checked: checked === true,
+              reason: checked === true ? "" : value.reason,
+            })
+          }
         />
         <div className="flex-1 space-y-1">
           <div className="flex items-center justify-between gap-3">
@@ -154,6 +160,21 @@ export function ChecklistItem({
           <p className="text-sm text-muted-foreground">
             Checking this awards full marks.
           </p>
+          {!value.checked ? (
+            <label className="block space-y-1 pt-2 text-sm font-medium">
+              <span>Reason this mark was not awarded</span>
+              <Textarea
+                aria-label={`Reason no mark was awarded for ${item.description}`}
+                rows={2}
+                value={value.reason ?? ""}
+                disabled={readOnly}
+                placeholder="Add a reason"
+                onChange={(event) =>
+                  onChange({ ...value, reason: event.target.value })
+                }
+              />
+            </label>
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -189,26 +210,76 @@ export function RecipeCard({
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
-        <label className="flex items-center gap-3 text-sm">
-          <Checkbox
-            checked={value.recipeCompleted}
-            disabled={readOnly}
-            onCheckedChange={(checked) =>
-              onChange({ ...value, recipeCompleted: checked === true })
-            }
-          />
-          <span>Recipe Completed</span>
-        </label>
-        <label className="flex items-center gap-3 text-sm">
-          <Checkbox
-            checked={value.costingAppropriate}
-            disabled={readOnly}
-            onCheckedChange={(checked) =>
-              onChange({ ...value, costingAppropriate: checked === true })
-            }
-          />
-          <span>Costing Appropriate</span>
-        </label>
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 text-sm">
+            <Checkbox
+              checked={value.recipeCompleted}
+              disabled={readOnly}
+              onCheckedChange={(checked) =>
+                onChange({
+                  ...value,
+                  recipeCompleted: checked === true,
+                  recipeCompletedReason:
+                    checked === true ? "" : value.recipeCompletedReason,
+                })
+              }
+            />
+            <span>Recipe Completed</span>
+          </label>
+          {!value.recipeCompleted ? (
+            <label className="block space-y-1 pl-7 text-sm font-medium">
+              <span>Reason this mark was not awarded</span>
+              <Textarea
+                aria-label={`Reason no mark was awarded for ${item.recipeName} recipe completion`}
+                rows={2}
+                value={value.recipeCompletedReason ?? ""}
+                disabled={readOnly}
+                placeholder="Add a reason"
+                onChange={(event) =>
+                  onChange({
+                    ...value,
+                    recipeCompletedReason: event.target.value,
+                  })
+                }
+              />
+            </label>
+          ) : null}
+        </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 text-sm">
+            <Checkbox
+              checked={value.costingAppropriate}
+              disabled={readOnly}
+              onCheckedChange={(checked) =>
+                onChange({
+                  ...value,
+                  costingAppropriate: checked === true,
+                  costingAppropriateReason:
+                    checked === true ? "" : value.costingAppropriateReason,
+                })
+              }
+            />
+            <span>Costing Appropriate</span>
+          </label>
+          {!value.costingAppropriate ? (
+            <label className="block space-y-1 pl-7 text-sm font-medium">
+              <span>Reason this mark was not awarded</span>
+              <Textarea
+                aria-label={`Reason no mark was awarded for ${item.recipeName} costing`}
+                rows={2}
+                value={value.costingAppropriateReason ?? ""}
+                disabled={readOnly}
+                placeholder="Add a reason"
+                onChange={(event) =>
+                  onChange({
+                    ...value,
+                    costingAppropriateReason: event.target.value,
+                  })
+                }
+              />
+            </label>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
@@ -336,7 +407,12 @@ export function PracticalDishCard({
               value={String(value.score)}
               disabled={readOnly}
               onValueChange={(nextValue) =>
-                onChange({ ...value, score: Number(nextValue) })
+                onChange({
+                  ...value,
+                  score: Number(nextValue),
+                  reason:
+                    Number(nextValue) >= item.maxMark ? "" : value.reason,
+                })
               }
             >
               <SelectTrigger className="w-full">
@@ -367,6 +443,21 @@ export function PracticalDishCard({
             />
           </div>
         </div>
+        {score < item.maxMark ? (
+          <label className="block space-y-1 text-sm font-medium">
+            <span>Reason marks were not awarded</span>
+            <Textarea
+              aria-label={`Reason marks were not awarded for ${item.dishName}`}
+              rows={2}
+              value={value.reason ?? ""}
+              disabled={readOnly}
+              placeholder="Add a reason"
+              onChange={(event) =>
+                onChange({ ...value, reason: event.target.value })
+              }
+            />
+          </label>
+        ) : null}
       </CardContent>
     </Card>
   );

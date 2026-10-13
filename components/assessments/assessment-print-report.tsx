@@ -48,18 +48,23 @@ function AssessmentItemRow({
   const maxMark = getItemMaxMark(item);
 
   if (item.type === "checkbox") {
-    const checked =
-      (value as CheckboxAssessmentDraft | undefined)?.checked ?? true;
+    const checkboxValue = value as CheckboxAssessmentDraft | undefined;
+    const checked = checkboxValue?.checked ?? true;
     return (
-      <div
-        className={`flex items-start justify-between gap-3 border-b py-1.5 text-sm ${indentClass}`}
-      >
-        <span>
-          [{checked ? "x" : " "}] {item.description}
-        </span>
-        <span className="whitespace-nowrap font-medium">
-          {score} / {maxMark}
-        </span>
+      <div className={`border-b py-1.5 text-sm ${indentClass}`}>
+        <div className="flex items-start justify-between gap-3">
+          <span>
+            [{checked ? "x" : " "}] {item.description}
+          </span>
+          <span className="whitespace-nowrap font-medium">
+            {score} / {maxMark}
+          </span>
+        </div>
+        {!checked && checkboxValue?.reason ? (
+          <p className="text-xs text-muted-foreground">
+            Reason mark not awarded: {checkboxValue.reason}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -80,6 +85,16 @@ function AssessmentItemRow({
           {(recipeValue?.costingAppropriate ?? true) ? "x" : " "}] Costing
           Appropriate
         </p>
+        {!recipeValue?.recipeCompleted && recipeValue?.recipeCompletedReason ? (
+          <p className="text-xs text-muted-foreground">
+            Recipe completion mark not awarded: {recipeValue.recipeCompletedReason}
+          </p>
+        ) : null}
+        {!recipeValue?.costingAppropriate && recipeValue?.costingAppropriateReason ? (
+          <p className="text-xs text-muted-foreground">
+            Costing mark not awarded: {recipeValue.costingAppropriateReason}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -108,6 +123,11 @@ function AssessmentItemRow({
         {dishValue?.notes ? (
           <p className="text-xs text-muted-foreground">
             Notes: {dishValue.notes}
+          </p>
+        ) : null}
+        {score < maxMark && dishValue?.reason ? (
+          <p className="text-xs text-muted-foreground">
+            Reason marks not awarded: {dishValue.reason}
           </p>
         ) : null}
       </div>
