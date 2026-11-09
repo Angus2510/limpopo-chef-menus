@@ -249,10 +249,10 @@ export async function POST(req: NextRequest) {
 
     const student = await prisma.students.findUnique({
       where: { id: studentId },
-      select: { id: true, active: true },
+      select: { id: true },
     });
 
-    if (!student || !student.active) {
+    if (!student) {
       return NextResponse.json(
         { error: "Selected student is not available" },
         { status: 404 },

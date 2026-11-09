@@ -144,6 +144,7 @@ export type IntakeGroupOption = {
 
 export type StudentOption = {
   id: string;
+  active: boolean;
   admissionNumber: string;
   fullName: string;
 };

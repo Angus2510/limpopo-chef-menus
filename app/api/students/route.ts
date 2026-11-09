@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
   try {
     const students = await prisma.students.findMany({
       where: {
-        active: true,
         intakeGroup: {
           has: intakeGroupId,
         },
@@ -34,6 +33,7 @@ export async function GET(req: NextRequest) {
       },
       select: {
         id: true,
+        active: true,
         admissionNumber: true,
         profile: {
           select: {
@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
 
     const mapped = students.map((student: (typeof students)[number]) => ({
       id: student.id,
+      active: student.active,
       admissionNumber: student.admissionNumber,
       fullName:
         `${student.profile.firstName} ${student.profile.lastName}`.trim(),

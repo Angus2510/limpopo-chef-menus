@@ -92,12 +92,12 @@ export async function GET(req: NextRequest) {
 
     const students = await prisma.students.findMany({
       where: {
-        active: true,
         ...(campusId ? { campus: { has: campusId } } : {}),
         ...(intakeGroupId ? { intakeGroup: { has: intakeGroupId } } : {}),
       },
       select: {
         id: true,
+        active: true,
         admissionNumber: true,
         profile: {
           select: {
@@ -182,7 +182,6 @@ export async function POST(req: NextRequest) {
     const existingStudents = await prisma.students.findMany({
       where: {
         id: { in: studentIds },
-        active: true,
       },
       select: { id: true },
     });

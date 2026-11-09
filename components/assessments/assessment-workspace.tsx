@@ -601,6 +601,7 @@ export function AssessmentWorkspace() {
                   {students.map((student) => (
                     <SelectItem key={student.id} value={student.id}>
                       {student.fullName}
+                      {!student.active ? " (Blocked)" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -731,9 +732,19 @@ export function AssessmentWorkspace() {
                               <TableCell>{student.fullName}</TableCell>
                               <TableCell>
                                 <Badge
-                                  variant={selected ? "default" : "outline"}
+                                  variant={
+                                    !student.active
+                                      ? "destructive"
+                                      : selected
+                                        ? "default"
+                                        : "outline"
+                                  }
                                 >
-                                  {selected ? "Selected" : "Ready"}
+                                  {!student.active
+                                    ? "Blocked"
+                                    : selected
+                                      ? "Selected"
+                                      : "Ready"}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
