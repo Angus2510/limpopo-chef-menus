@@ -11,8 +11,19 @@ export async function GET(req: NextRequest) {
 
   const intakeGroupId = req.nextUrl.searchParams.get("intakeGroupId")?.trim();
   const campusId = req.nextUrl.searchParams.get("campusId")?.trim();
+  const studentIdsParam = req.nextUrl.searchParams.get("studentIds");
+  const studentIds = studentIdsParam?.split(",").map((id) => id.trim());
 
-  if (!intakeGroupId || !isObjectId(intakeGroupId)) {
+  if (
+    studentIds &&
+    (studentIds.length === 0 ||
+      studentIds.length > 27 ||
+      !studentIds.every(isObjectId))
+  ) {
+    return NextResponse.json({ error: "Invalid studentIds" }, { status: 400 });
+  }
+
+  if (!studentIds && (!intakeGroupId || !isObjectId(intakeGroupId))) {
     return NextResponse.json(
       { error: "Valid intakeGroupId is required" },
       { status: 400 },
@@ -26,10 +37,17 @@ export async function GET(req: NextRequest) {
   try {
     const students = await prisma.students.findMany({
       where: {
-        intakeGroup: {
-          has: intakeGroupId,
-        },
-        ...(campusId ? { campus: { has: campusId } } : {}),
+        ...(studentIds
+          ? {
+              id: { in: studentIds },
+              ...(campusId ? { campus: { has: campusId } } : {}),
+            }
+          : {
+              intakeGroup: {
+                has: intakeGroupId,
+              },
+              ...(campusId ? { campus: { has: campusId } } : {}),
+            }),
       },
       select: {
         id: true,

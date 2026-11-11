@@ -43,7 +43,10 @@ export function SidebarNav() {
       return;
     }
 
-    function refreshRecentSessions() {
+    let cancelled = false;
+
+    async function refreshRecentSessions() {
+      let sessions: RecentAssessmentSession[];
       try {
         const stored = window.localStorage.getItem(RECENT_SESSIONS_STORAGE_KEY);
         if (!stored) {
@@ -57,9 +60,76 @@ export function SidebarNav() {
           return;
         }
 
-        setRecentSessions(parsed.slice(0, 27));
-      } catch {
+        sessions = parsed
+          .filter(
+            (session) =>
+              session &&
+              typeof session.studentId === "string" &&
+              /^[0-9a-fA-F]{24}$/.test(session.studentId),
+          )
+          .slice(0, 27);
+
+        if (sessions.length === 0) {
+          setRecentSessions([]);
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to load recent sessions:", error);
         setRecentSessions([]);
+        return;
+      }
+
+      try {
+        const studentIds = [
+          ...new Set(sessions.map((session) => session.studentId)),
+        ];
+        const params = new URLSearchParams({
+          studentIds: studentIds.join(","),
+        });
+        const response = await fetch(`/api/students?${params.toString()}`, {
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as {
+          students?: Array<{
+            id: string;
+            admissionNumber: string;
+            fullName: string;
+          }>;
+          error?: string;
+        };
+
+        if (!response.ok) {
+          throw new Error(payload.error || "Unable to refresh student names");
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        const studentsById = new Map(
+          (payload.students ?? []).map((student) => [student.id, student]),
+        );
+        setRecentSessions(
+          sessions.map((session) => {
+            const student = studentsById.get(session.studentId);
+            return {
+              ...session,
+              studentName: student?.fullName ?? "Student name unavailable",
+              studentAdmissionNumber:
+                student?.admissionNumber ?? session.studentAdmissionNumber,
+            };
+          }),
+        );
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to refresh recent student names:", error);
+          setRecentSessions(
+            sessions.map((session) => ({
+              ...session,
+              studentName: "Student name unavailable",
+            })),
+          );
+        }
       }
     }
 
@@ -70,6 +140,7 @@ export function SidebarNav() {
     );
 
     return () => {
+      cancelled = true;
       window.removeEventListener(
         "assessment-recent-sessions-updated",
         refreshRecentSessions,
